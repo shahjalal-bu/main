@@ -200,7 +200,7 @@
       <div class="screener-area">
         <video src="" id="screener" autoplay playsinline></video>
         <div class="diode">
-          <div class="laser"></div>
+          <div class="" id="laser"></div>
         </div>
       </div>
       <!-- handle camera -->
@@ -221,22 +221,20 @@
     <script src="Assets/js/jquery-3.6.0.min.js"></script>
     <script src="Assets/js/Bootstrap.min.js"></script>
     <script src="Assets/js/main.js"></script>
+    <!-- custom js -->
     <script>
       const video = document.getElementById("screener");
       const bralert01 = document.querySelector(".bralert01");
       const bralert02 = document.querySelector(".bralert02");
       const savedata = document.querySelector(".savedata");
-
       const button = document.getElementById("button");
       const select = document.getElementById("select");
       let currentStream;
-
       function stopMediaTracks(stream) {
         stream.getTracks().forEach((track) => {
           track.stop();
         });
       }
-
       function gotDevices(mediaDevices) {
         select.innerHTML = "";
         select.appendChild(document.createElement("option"));
@@ -281,65 +279,12 @@
       });
 
       navigator.mediaDevices.enumerateDevices().then(gotDevices);
+      let id = 1;
+      const startBarCodeScan = (onBarcodeDetected) => {
+        document.getElementById("laser").classList.add("laser");
 
-      // navigator.mediaDevices
-      //   .getUserMedia({ video: true })
-      //   .then(function (stream) {
-      //     video.srcObject = stream;
-      //     video.play();
-      //   })
-      //   .catch(function (err) {
-      //     console.log("An error occurred: " + err);
-      //   });
-
-      // navigator.mediaDevices
-      //   .getUserMedia({
-      //     video: { facingMode: "environment", deviceId: "back" },
-      //   })
-      //   .then(function (stream) {
-      //     video.srcObject = stream;
-      //     video.play();
-      //   })
-      //   .catch(function (err) {
-      //     console.log("An error occurred: " + err);
-      //   });
-
-      const scanBarcodes = [];
-      const showScanBarCodeData = (id, price, sku) => {
-        return `
-                  <div class="barcontent">
-                    <div class="barct_id">
-                      <!---id.no---->
-                      <h4 class="id_bar01">${id}.</h4>
-                      <!----screencode---->
-                      <h4>SKU : <span class="barcode_id">${sku}</span></h4>
-                      <!----input price---->
-                      <input type="text" placeholder="price" class="barcode_price" />
-                    </div>
-
-                    <div class="bar_cbtn02">
-                      <!--------number count------>
-                      <div class="number_c">
-                        <button class="minus_numBtn">
-                          <i class="fa-solid fa-minus"></i>
-                        </button>
-                        <input type="number" class="count_numbers" value="1" />
-                        <button class="minus_numBtn">
-                          <i class="fa-solid fa-plus"></i>
-                        </button>
-                      </div>
-                      <!--------deleted------>
-                      <div id="bart_deleted" class="deleted_bbtn">
-                        <i class="fa-solid fa-trash"></i>
-                      </div>
-                    </div>
-                  </div>`;
-      };
-
-      // savedata.innerHTML += showScanBarCodeData("01", 5000, 10005);
-      // savedata.innerHTML += showScanBarCodeData("01", 5000, 10005);
-      // savedata.innerHTML += showScanBarCodeData("01", 5000, 10005);
-      const startBarCodeScan = () => {
+        bralert01.classList.remove("d-none");
+        bralert02.classList.add("d-none");
         Quagga.init(
           {
             inputStream: {
@@ -371,33 +316,92 @@
           beep.play();
           bralert02.classList.remove("d-none");
           bralert01.classList.add("d-none");
-          scanBarcodes.push({
-            id: scanBarcodes.length + 1,
-            sku: result.codeResult.code,
-            price: 0,
-          });
+          document.getElementById("laser").classList.remove("laser");
+          const div = document.createElement("div");
+          div.classList.add("barcontent");
+          div.innerHTML = ` <div class="barct_id">
+            <!---id.no---->
+            <h4 class="id_bar01">${id}.</h4>
+            <!----screencode---->
+            <h4>
+              SKU : <span class="barcode_id">${result.codeResult.code}</span>
+            </h4>
+            <!----input price---->
+            <input
+              type="text"
+              placeholder="price"
+              class="barcode_price"
+              id="price"
+            />
+            <div class="btn btn-primary" id="addBtn">Add</div>
+          </div>
 
-          // const finalResult = scanBarcodes.reduce(
-          //   (acc, cur) => showScanBarCodeData(cur.id, cur.price, cur.sku),
-          //   ""
-          // );
-          savedata.innerHTML = null;
-          scanBarcodes.forEach(
-            (el) =>
-              (savedata.innerHTML = showScanBarCodeData(
-                el.id,
-                el.price,
-                el.sku
-              ))
-          );
-
+          <div class="bar_cbtn02">
+            <!--------number count------>
+            <div class="number_c">
+              <button class="minus_numBtn" id="minusCounter">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+              <input type="number" class="count_numbers" value="1" />
+              <button class="minus_numBtn" id="plusCounter">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+            <!--------deleted------>
+            <div id="bart_deleted" class="deleted_bbtn">
+              <i class="fa-solid fa-trash"></i>
+            </div>
+          </div>
+        `;
+          savedata.appendChild(div);
+          setInterval(() => {
+            bralert02.classList.add("d-none");
+          }, 2000);
+          id++;
           Quagga.stop();
+
+          if (typeof onBarcodeDetected === "function") {
+            onBarcodeDetected();
+          }
         });
       };
+
       const barcodebtn = document.querySelector(".barcodebtn");
       barcodebtn.addEventListener("click", () => {
         bralert01.classList.remove("d-none");
-        startBarCodeScan();
+        startBarCodeScan(function () {
+          barcodebtn.removeEventListener("click");
+        });
+      });
+
+      savedata.addEventListener("click", (e) => {
+        const selectedItem = e.target.parentNode.parentNode.parentNode;
+        //delete item
+        // console.log(e.target.parentNode.id === "bart_deleted");
+        if (e.target.parentNode.id === "bart_deleted") {
+          selectedItem.style.display = "none";
+        }
+        //get counter value
+        const count = selectedItem.querySelector(".count_numbers");
+        if (e.target.parentNode.id === "plusCounter") {
+          count.value = count.valueAsNumber + 1;
+        }
+        if (e.target.parentNode.id === "minusCounter") {
+          count.value = count.valueAsNumber - 1;
+        }
+        //handle price
+        const priceInput = selectedItem.querySelector("#price");
+        if (e.target.id === "addBtn") {
+          if (priceInput.disabled) {
+            priceInput.disabled = false;
+            e.target.innerHTML = "Add";
+          } else {
+            if (priceInput.value) {
+              priceInput.disabled = true;
+              e.target.innerHTML = "edit";
+            }
+          }
+        }
       });
     </script>
   </body>
