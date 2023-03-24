@@ -280,11 +280,8 @@
 
       navigator.mediaDevices.enumerateDevices().then(gotDevices);
       let id = 1;
+      let scanning = false;
       const startBarCodeScan = (onBarcodeDetected) => {
-        document.getElementById("laser").classList.add("laser");
-
-        bralert01.classList.remove("d-none");
-        bralert02.classList.add("d-none");
         Quagga.init(
           {
             inputStream: {
@@ -311,7 +308,6 @@
         );
 
         Quagga.onDetected(function (result) {
-          console.log(result.codeResult.code);
           var beep = document.getElementById("beep");
           beep.play();
           bralert02.classList.remove("d-none");
@@ -369,9 +365,21 @@
       const barcodebtn = document.querySelector(".barcodebtn");
       barcodebtn.addEventListener("click", () => {
         bralert01.classList.remove("d-none");
-        startBarCodeScan(function () {
-          barcodebtn.removeEventListener("click");
-        });
+        if (scanning === false) {
+          document.getElementById("laser").classList.add("laser");
+          bralert01.classList.remove("d-none");
+          bralert02.classList.add("d-none");
+          startBarCodeScan(function () {
+            barcodebtn.removeEventListener("click");
+          });
+          scanning = !scanning;
+        } else {
+          document.getElementById("laser").classList.remove("laser");
+          bralert01.classList.add("d-none");
+          bralert02.classList.add("d-none");
+          Quagga.stop();
+          scanning = !scanning;
+        }
       });
 
       savedata.addEventListener("click", (e) => {
@@ -386,7 +394,10 @@
         if (e.target.parentNode.id === "plusCounter") {
           count.value = count.valueAsNumber + 1;
         }
-        if (e.target.parentNode.id === "minusCounter") {
+        if (
+          e.target.parentNode.id === "minusCounter" &&
+          count.valueAsNumber > 1
+        ) {
           count.value = count.valueAsNumber - 1;
         }
         //handle price
